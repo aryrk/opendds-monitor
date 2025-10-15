@@ -122,3 +122,30 @@ void ParticipantTableModel::removeParticipant(const ParticipantInfo& info)
 
     emit layoutChanged();
 }
+
+void ParticipantTableModel::setSingleParticipant(const ParticipantInfo &info)
+{
+    emit layoutAboutToBeChanged();
+    m_data.clear();
+    m_data.push_back(info);
+    emit layoutChanged();
+}
+
+void ParticipantTableModel::clearParticipants()
+{
+    emit layoutAboutToBeChanged();
+    m_data.clear();
+    emit layoutChanged();
+}
+
+bool ParticipantTableModel::getParticipantByGuid(const QString &guid, ParticipantInfo &out) const
+{
+    auto iter = std::find_if(m_data.begin(), m_data.end(), [&](const ParticipantInfo &i)
+                             { return QString::fromStdString(i.guid) == guid; });
+    if (iter != m_data.end())
+    {
+        out = *iter;
+        return true;
+    }
+    return false;
+}

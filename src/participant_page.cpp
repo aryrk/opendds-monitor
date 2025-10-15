@@ -12,7 +12,7 @@ ParticipantPage::ParticipantPage(QWidget* parent)
     setupUi(this);
 
     participantTableView->setModel(&m_tableModel);
-    // participantTableView->hideColumn(ParticipantTableModel::COLUMN_GUID);
+    participantTableView->hideColumn(ParticipantTableModel::COLUMN_GUID);
 }
 
 
@@ -30,6 +30,10 @@ void ParticipantPage::removeParticipant(const ParticipantInfo& info)
     m_tableModel.removeParticipant(info); 
 }
 
+bool ParticipantPage::findParticipant(const QString &guid, ParticipantInfo &out) const
+{
+    return m_tableModel.getParticipantByGuid(guid, out);
+}
 
 /**
  * @}

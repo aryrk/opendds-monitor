@@ -277,7 +277,7 @@ void TopicMonitor::on_sample_data_received(OpenDDS::DCPS::Recorder*,
             pubGuid = QString();
         }
     }
-    CommonData::storeSample(m_topicName, sampleName, sample);
+    CommonData::storeSample(m_topicName, sampleName, sample, pubGuid);
 }
 
 void TopicMonitor::on_data_available(DDS::DataReader_ptr dr)
