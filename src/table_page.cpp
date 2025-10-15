@@ -45,6 +45,8 @@ TablePage::TablePage(const QString& topicName, QWidget *parent) :
     // Participant table model for matched publisher display
     m_participantTableModel = std::make_unique<ParticipantTableModel>();
     participantTableView->setModel(m_participantTableModel.get());
+    // Hide GUID column in the topic page participant view
+    participantTableView->hideColumn(ParticipantTableModel::COLUMN_GUID);
 
     connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshPage()));
     m_refreshTimer.start(REFRESH_TIMEOUT);
