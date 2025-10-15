@@ -103,6 +103,34 @@ void PublicationMonitor::on_data_available(DDS::DataReader_ptr reader)
             // If we already know about this topic, just store additional
             // partition information and move on
             topicInfo->addPartitions(sampleData.partition);
+
+            // Create a GUID string in host.app.instance format and store mapping
+            std::ostringstream guidStream2;
+            for (int j = 3; j >= 0; j--)
+            {
+                guidStream2 << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(sampleData.key.value[j]);
+            }
+            std::string host2 = guidStream2.str();
+            guidStream2.str("");
+            guidStream2.clear();
+            for (int j = 7; j >= 4; j--)
+            {
+                guidStream2 << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(sampleData.key.value[j]);
+            }
+            std::string app2 = guidStream2.str();
+            guidStream2.str("");
+            guidStream2.clear();
+            for (int j = 11; j >= 8; j--)
+            {
+                guidStream2 << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(sampleData.key.value[j]);
+            }
+            std::string instance2 = guidStream2.str();
+            std::string guidStr2 = host2 + "." + app2 + "." + instance2;
+            QString qguid2 = QString::fromStdString(guidStr2);
+            std::cout << "PublicationMonitor: (existing topic) storePublicationGuid handle=" << static_cast<unsigned long long>(sampleInfo.instance_handle)
+                      << " guid=[" << guidStr2 << "]" << std::endl;
+            CommonData::storePublicationGuid(sampleInfo.instance_handle, qguid2);
+
             continue;
         }
 
