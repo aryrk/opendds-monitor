@@ -12,7 +12,7 @@ ParticipantPage::ParticipantPage(QWidget* parent)
     setupUi(this);
 
     participantTableView->setModel(&m_tableModel);
-    participantTableView->hideColumn(ParticipantTableModel::COLUMN_GUID);
+    // participantTableView->hideColumn(ParticipantTableModel::COLUMN_GUID);
 }
 
 

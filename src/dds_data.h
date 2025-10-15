@@ -368,12 +368,14 @@ public:
      */
     static void storeSample(const QString& topicName,
                             const QString& sampleName,
-                            const std::shared_ptr<OpenDynamicData> sample);
+                            const std::shared_ptr<OpenDynamicData> sample,
+                            const QString &guid = QString());
 
     /// Store a new sample represented by a DynamicData object.
     static void storeDynamicSample(const QString& topicName,
                                    const QString& sampleName,
-                                   DDS::DynamicData_var sample);
+                                   DDS::DynamicData_var sample,
+                                   const QString &guid = QString());
 
     /**
      * @brief Get a copy of a sample for a specified topic.
@@ -387,6 +389,19 @@ public:
 
     static DDS::DynamicData_var copyDynamicSample(const QString& topicName,
                                                   int index);
+
+    /**
+     * @brief Get the GUID string for a stored sample (may be empty).
+     */
+    static QString getSampleGuid(const QString &topicName, int index);
+
+    /**
+     * @brief Publication handle -> GUID mapping helpers for builtin topic monitoring.
+     */
+    static void storePublicationGuid(DDS::InstanceHandle_t handle, const QString &guid);
+    static void removePublicationGuid(DDS::InstanceHandle_t handle);
+    static QString getPublicationGuid(DDS::InstanceHandle_t handle);
+    
     /**
      * @brief Get a list of sample names (timestamps) for a given topic.
      * @param[in] topicName The name of the topic.
@@ -432,6 +447,12 @@ private:
     static SampleTimeMap m_sampleTimes;
 
     /**
+     * @brief GUID strings associated with each stored sample (parallel to m_sampleTimes)
+     */
+    using SampleGuidMap = QMap<QString, QList<QString>>;
+    static SampleGuidMap m_sampleGuids;
+
+    /**
      * @brief Stores information about the topics on the bus.
      * @details The key is the topic name and the value is the topic
      *          information struct.
@@ -446,6 +467,10 @@ private:
 
     /// Mutex for protecting access to m_dynamicSamples.
     static QMutex m_dynamicSamplesMutex;
+
+    /// Map from publication handle to GUID string (built-in publication topic)
+    static QMap<quint64, QString> m_publicationGuidMap;
+    static QMutex m_publicationGuidMapMutex;
 
 };
 

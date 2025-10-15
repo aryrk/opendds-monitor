@@ -664,6 +664,18 @@ void TablePage::setSample(const QString& sampleName)
         }
     }
 
+    // Print the publication GUID for this sample if available
+    QString guid = CommonData::getSampleGuid(m_topicName, index);
+    if (!guid.isEmpty())
+    {
+        std::cout << "Selected sample GUID: " << guid.toStdString() << std::endl;
+    }
+    else
+    {
+        // Try to resolve via publication handle mapping if available
+        std::cout << "Selected sample GUID: (unknown)" << std::endl;
+    }
+
     revertButton->setEnabled(false);
 }
 
