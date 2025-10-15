@@ -103,6 +103,21 @@ public:
      */
     void removeParticipant(const ParticipantInfo& info);
 
+    /**
+     * @brief Replace contents with a single participant entry.
+     */
+    void setSingleParticipant(const ParticipantInfo &info);
+
+    /**
+     * @brief Clear all participants from the model.
+     */
+    void clearParticipants();
+
+    /**
+     * @brief Find a participant by GUID. Returns true if found and fills out info.
+     */
+    bool getParticipantByGuid(const QString &guid, ParticipantInfo &out) const;
+
 private:
 
     /// Stores the names of all column titles

@@ -30,6 +30,10 @@ void ParticipantPage::removeParticipant(const ParticipantInfo& info)
     m_tableModel.removeParticipant(info); 
 }
 
+bool ParticipantPage::findParticipant(const QString &guid, ParticipantInfo &out) const
+{
+    return m_tableModel.getParticipantByGuid(guid, out);
+}
 
 /**
  * @}

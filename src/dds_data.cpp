@@ -20,7 +20,9 @@ QMap<QString, QList<DDS::DynamicData_var> > CommonData::m_dynamicSamples;
 QMutex CommonData::m_sampleMutex;
 QMutex CommonData::m_topicMutex;
 QMutex CommonData::m_dynamicSamplesMutex;
-
+QMap<QString, QList<QString>> CommonData::m_sampleGuids;
+QMap<quint64, QString> CommonData::m_publicationGuidMap;
+QMutex CommonData::m_publicationGuidMapMutex;
 
 //------------------------------------------------------------------------------
 void CommonData::cleanup()
@@ -413,6 +415,9 @@ void CommonData::flushStaticSamples(const QString& topicName)
         SampleTimeMap::iterator it2 = m_sampleTimes.find(topicName);
         Q_ASSERT(it2 != m_sampleTimes.end());
         m_sampleTimes.erase(it2);
+        SampleGuidMap::iterator it3 = m_sampleGuids.find(topicName);
+        if (it3 != m_sampleGuids.end())
+            m_sampleGuids.erase(it3);
     }
 }
 
@@ -427,6 +432,9 @@ void CommonData::flushDynamicSamples(const QString& topicName)
         SampleTimeMap::iterator it2 = m_sampleTimes.find(topicName);
         Q_ASSERT(it2 != m_sampleTimes.end());
         m_sampleTimes.erase(it2);
+        SampleGuidMap::iterator it3 = m_sampleGuids.find(topicName);
+        if (it3 != m_sampleGuids.end())
+            m_sampleGuids.erase(it3);
     }
 }
 
@@ -434,44 +442,52 @@ void CommonData::flushDynamicSamples(const QString& topicName)
 //------------------------------------------------------------------------------
 void CommonData::storeSample(const QString& topicName,
                              const QString& sampleName,
-                             const std::shared_ptr<OpenDynamicData> sample)
+                             const std::shared_ptr<OpenDynamicData> sample,
+                             const QString &guid)
 {
     QMutexLocker locker(&m_sampleMutex);
 
     QList<std::shared_ptr<OpenDynamicData>>& sampleList = m_samples[topicName];
     QStringList& timesList = m_sampleTimes[topicName];
+    QList<QString> &guidList = m_sampleGuids[topicName];
 
     // Store a pointer to the new sample
     sampleList.push_front(sample);
     timesList.push_front(sampleName);
+    guidList.push_front(guid);
 
     // Cleanup
     while (sampleList.size() > MAX_SAMPLES)
     {
        sampleList.pop_back();
        timesList.pop_back();
+       guidList.pop_back();
     }
 }
 
 //------------------------------------------------------------------------------
 void CommonData::storeDynamicSample(const QString& topicName,
                                     const QString& sampleName,
-                                    const DDS::DynamicData_var sample)
+                                    const DDS::DynamicData_var sample,
+                                    const QString &guid)
 {
     QMutexLocker locker(&m_dynamicSamplesMutex);
 
     QList<DDS::DynamicData_var>& sampleList = m_dynamicSamples[topicName];
     QStringList& timesList = m_sampleTimes[topicName];
+    QList<QString>& guidList = m_sampleGuids[topicName];
 
     // Add new sample
     sampleList.push_front(sample);
     timesList.push_front(sampleName);
+    guidList.push_front(guid);
 
     // Cleanup
     while (sampleList.size() > MAX_SAMPLES)
     {
         sampleList.pop_back();
         timesList.pop_back();
+        guidList.pop_back();
     }
 }
 
@@ -510,6 +526,44 @@ QStringList CommonData::getSampleList(const QString& topicName)
         return m_sampleTimes.value(topicName);
     }
     return QStringList();
+}
+
+//------------------------------------------------------------------------------
+QString CommonData::getSampleGuid(const QString &topicName, int index)
+{
+    QMutexLocker locker(&m_sampleMutex);
+    if (m_sampleGuids.contains(topicName) && m_sampleGuids.value(topicName).size() > index)
+    {
+        return m_sampleGuids.value(topicName).at(index);
+    }
+    return QString();
+}
+
+//------------------------------------------------------------------------------
+void CommonData::storePublicationGuid(DDS::InstanceHandle_t handle, const QString &guid)
+{
+    QMutexLocker locker(&m_publicationGuidMapMutex);
+    // instance handle may be large; convert to quint64
+    quint64 key = static_cast<quint64>(handle);
+    m_publicationGuidMap[key] = guid;
+}
+
+//------------------------------------------------------------------------------
+void CommonData::removePublicationGuid(DDS::InstanceHandle_t handle)
+{
+    QMutexLocker locker(&m_publicationGuidMapMutex);
+    quint64 key = static_cast<quint64>(handle);
+    m_publicationGuidMap.remove(key);
+}
+
+//------------------------------------------------------------------------------
+QString CommonData::getPublicationGuid(DDS::InstanceHandle_t handle)
+{
+    QMutexLocker locker(&m_publicationGuidMapMutex);
+    quint64 key = static_cast<quint64>(handle);
+    if (m_publicationGuidMap.contains(key))
+        return m_publicationGuidMap.value(key);
+    return QString();
 }
 
 //------------------------------------------------------------------------------

@@ -12,6 +12,8 @@
 
 #include <QDateTime>
 #include <QRegExp>
+#include <dds/DCPS/GuidConverter.h>
+#include <sstream>
 
 #include <iostream>
 #include <stdexcept>
@@ -249,7 +251,23 @@ void TopicMonitor::on_sample_data_received(OpenDDS::DCPS::Recorder *,
         (static_cast<unsigned long long>(rawSample.source_timestamp_.nanosec) * 1e-6));
 
     QString sampleName = dataTime.toString("HH:mm:ss.zzz");
-    CommonData::storeSample(m_topicName, sampleName, sample);
+    // Try to extract publication GUID from raw sample (OpenDDS GUID)
+    QString pubGuid;
+    {
+        // rawSample.publication_id_ is OpenDDS::DCPS::GUID_t in OpenDDS
+        try
+        {
+            OpenDDS::DCPS::GuidConverter gc(rawSample.publication_id_);
+            std::ostringstream oss;
+            oss << gc;
+            pubGuid = QString::fromStdString(oss.str());
+        }
+        catch (...)
+        {
+            pubGuid = QString();
+        }
+    }
+    CommonData::storeSample(m_topicName, sampleName, sample, pubGuid);
 }
 
 void TopicMonitor::on_data_available(DDS::DataReader_ptr dr)
@@ -299,8 +317,10 @@ void TopicMonitor::on_data_available(DDS::DataReader_ptr dr)
                 (static_cast<unsigned long long>(infos[i].source_timestamp.sec) * 1000) +
                 (static_cast<unsigned long long>(infos[i].source_timestamp.nanosec) * 1e-6));
             QString sampleName = dataTime.toString("HH:mm:ss.zzz");
+            QString pubGuid = CommonData::getPublicationGuid(infos[i].publication_handle);
             CommonData::storeDynamicSample(m_topicName, sampleName,
-                                           DDS::DynamicData::_duplicate(messages[i].in()));
+                                           DDS::DynamicData::_duplicate(messages[i].in()),
+                                           pubGuid);
         }
     }
 }

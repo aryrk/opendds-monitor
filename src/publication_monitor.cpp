@@ -1,11 +1,12 @@
 #include <dds/DCPS/BuiltInTopicUtils.h>
 #include <dds/DCPS/XTypes/DynamicTypeSupport.h>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 #include "dds_data.h"
 #include "dds_manager.h"
 #include "publication_monitor.h"
-
 
 //------------------------------------------------------------------------------
 PublicationMonitor::PublicationMonitor() : m_dataReader(nullptr)
@@ -30,14 +31,12 @@ PublicationMonitor::PublicationMonitor() : m_dataReader(nullptr)
     m_dataReader->set_listener(this, DDS::DATA_AVAILABLE_STATUS);
 }
 
-
 //------------------------------------------------------------------------------
 PublicationMonitor::~PublicationMonitor()
 {
     // Don't delete?
     m_dataReader = nullptr;
 }
-
 
 //------------------------------------------------------------------------------
 void PublicationMonitor::on_data_available(DDS::DataReader_ptr reader)
@@ -73,6 +72,8 @@ void PublicationMonitor::on_data_available(DDS::DataReader_ptr reader)
         // Skip bogus data
         if (!sampleInfo.valid_data)
         {
+            // If instance is not alive, remove any mapping
+            CommonData::removePublicationGuid(sampleInfo.instance_handle);
             continue;
         }
 
@@ -137,6 +138,31 @@ void PublicationMonitor::on_data_available(DDS::DataReader_ptr reader)
         }
 
         CommonData::storeTopicInfo(topicName, topicInfo);
+
+        // Store mapping from instance handle to GUID string so readers can resolve publication_handle
+        // Create a GUID string in host.app.instance format similar to participant monitor
+        std::ostringstream guidStream;
+        for (int j = 3; j >= 0; j--)
+        {
+            guidStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(sampleData.key.value[j]);
+        }
+        std::string host = guidStream.str();
+        guidStream.str("");
+        guidStream.clear();
+        for (int j = 7; j >= 4; j--)
+        {
+            guidStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(sampleData.key.value[j]);
+        }
+        std::string app = guidStream.str();
+        guidStream.str("");
+        guidStream.clear();
+        for (int j = 11; j >= 8; j--)
+        {
+            guidStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(sampleData.key.value[j]);
+        }
+        std::string instance = guidStream.str();
+        std::string guidStr = host + "." + app + "." + instance;
+        CommonData::storePublicationGuid(sampleInfo.instance_handle, QString::fromStdString(guidStr));
 
         emit newTopic(topicName);
     }

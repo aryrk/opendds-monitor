@@ -9,6 +9,7 @@
 #include "dds_data.h"
 #include "graph_page.h"
 #include "qos_dictionary.h"
+#include "participant_page.h"
 
 #include <QInputDialog>
 #include <QMessageBox>
@@ -47,6 +48,12 @@ TablePage::TablePage(const QString &topicName, QWidget *parent) : QWidget(parent
     // Create a topic monitor to receive the data samples
     m_topicMonitor = std::make_unique<TopicMonitor>(topicName);
     m_topicReplayer = std::make_unique<TopicReplayer>(topicName);
+
+    // Participant table model for matched publisher display
+    m_participantTableModel = std::make_unique<ParticipantTableModel>();
+    participantTableView->setModel(m_participantTableModel.get());
+    // Hide GUID column in the topic page participant view
+    participantTableView->hideColumn(ParticipantTableModel::COLUMN_GUID);
 
     connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshPage()));
     m_refreshTimer.start(REFRESH_TIMEOUT);
@@ -918,6 +925,45 @@ void TablePage::setSample(const QString &sampleName)
         {
             m_tableModel->setSample(sample);
         }
+    }
+
+    // Print the publication GUID for this sample if available
+    QString guid = CommonData::getSampleGuid(m_topicName, index);
+    if (!guid.isEmpty())
+    {
+        ParticipantInfo pinfo;
+        bool found = false;
+        QWidgetList mainWidgets = QApplication::topLevelWidgets();
+        int totalPagesFound = 0;
+        for (int i = 0; i < mainWidgets.count() && !found; ++i)
+        {
+            QList<ParticipantPage *> pages = mainWidgets.at(i)->findChildren<ParticipantPage *>();
+            totalPagesFound += pages.count();
+            for (ParticipantPage *pp : pages)
+            {
+                if (!pp)
+                    continue;
+                bool f = pp->findParticipant(guid, pinfo);
+                if (f)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (found)
+        {
+            m_participantTableModel->setSingleParticipant(pinfo);
+        }
+        else
+        {
+            m_participantTableModel->clearParticipants();
+        }
+    }
+    else
+    {
+        m_participantTableModel->clearParticipants();
     }
 
     revertButton->setEnabled(false);

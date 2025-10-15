@@ -10,6 +10,7 @@
 #include <QTimer>
 
 #include <memory>
+#include "participant_table_model.h"
 
 class TopicTableModel;
 class TopicReplayer;
@@ -170,6 +171,9 @@ private:
 
     /// The name of the selected sample.
     QString m_selectedSample;
+
+    /// Participant table model for showing the matched publisher for this topic/sample
+    std::unique_ptr<ParticipantTableModel> m_participantTableModel;
 
     /// Refresh timer for all tables.
     QTimer m_refreshTimer;

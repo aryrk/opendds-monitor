@@ -32,6 +32,11 @@ public:
     void addParticipant(const ParticipantInfo& info);
     void removeParticipant(const ParticipantInfo& info);
 
+    /**
+     * @brief Find a participant by GUID using the internal model.
+     */
+    bool findParticipant(const QString &guid, ParticipantInfo &out) const;
+
 private:
 
     /// Data model for the DDS participants on this page.
