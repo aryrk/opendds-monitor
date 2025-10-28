@@ -671,38 +671,42 @@ void TablePage::setSample(const QString& sampleName)
         }
     }
 
-    // Print the publication GUID for this sample if available
     QString guid = CommonData::getSampleGuid(m_topicName, index);
     if (!guid.isEmpty())
     {
         ParticipantInfo pinfo;
-        bool found = false;
-        QWidgetList mainWidgets = QApplication::topLevelWidgets();
-        int totalPagesFound = 0;
-        for (int i = 0; i < mainWidgets.count() && !found; ++i)
-        {
-            QList<ParticipantPage *> pages = mainWidgets.at(i)->findChildren<ParticipantPage *>();
-            totalPagesFound += pages.count();
-            for (ParticipantPage *pp : pages)
+
+        if (CommonData::getParticipantInfoByGuid(guid, pinfo)) {
+            m_participantTableModel->setSingleParticipant(pinfo);
+        } else {
+            // search participant pages once and cache the result if found.
+            bool found = false;
+            QWidgetList mainWidgets = QApplication::topLevelWidgets();
+            for (int i = 0; i < mainWidgets.count() && !found; ++i)
             {
-                if (!pp)
-                    continue;
-                bool f = pp->findParticipant(guid, pinfo);
-                if (f)
+                QList<ParticipantPage *> pages = mainWidgets.at(i)->findChildren<ParticipantPage *>();
+                for (ParticipantPage *pp : pages)
                 {
-                    found = true;
-                    break;
+                    if (!pp)
+                        continue;
+                    bool f = pp->findParticipant(guid, pinfo);
+                    if (f)
+                    {
+                        found = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (found)
-        {
-            m_participantTableModel->setSingleParticipant(pinfo);
-        }
-        else
-        {
-            m_participantTableModel->clearParticipants();
+            if (found)
+            {
+                CommonData::storeParticipantInfo(pinfo);
+                m_participantTableModel->setSingleParticipant(pinfo);
+            }
+            else
+            {
+                m_participantTableModel->clearParticipants();
+            }
         }
     }
     else

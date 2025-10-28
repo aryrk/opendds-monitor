@@ -23,6 +23,8 @@ QMutex CommonData::m_dynamicSamplesMutex;
 QMap<QString, QList<QString>> CommonData::m_sampleGuids;
 QMap<quint64, QString> CommonData::m_publicationGuidMap;
 QMutex CommonData::m_publicationGuidMapMutex;
+QMap<QString, ParticipantInfo> CommonData::m_participantInfoMap;
+QMutex CommonData::m_participantInfoMutex;
 
 //------------------------------------------------------------------------------
 void CommonData::cleanup()
@@ -564,6 +566,32 @@ QString CommonData::getPublicationGuid(DDS::InstanceHandle_t handle)
     if (m_publicationGuidMap.contains(key))
         return m_publicationGuidMap.value(key);
     return QString();
+}
+
+//------------------------------------------------------------------------------
+void CommonData::storeParticipantInfo(const ParticipantInfo& info)
+{
+    QMutexLocker locker(&m_participantInfoMutex);
+    QString guid = QString::fromStdString(info.guid);
+    m_participantInfoMap[guid] = info;
+}
+
+//------------------------------------------------------------------------------
+bool CommonData::getParticipantInfoByGuid(const QString &guid, ParticipantInfo &out)
+{
+    QMutexLocker locker(&m_participantInfoMutex);
+    if (m_participantInfoMap.contains(guid)) {
+        out = m_participantInfoMap.value(guid);
+        return true;
+    }
+    return false;
+}
+
+//------------------------------------------------------------------------------
+void CommonData::removeParticipantInfoByGuid(const QString &guid)
+{
+    QMutexLocker locker(&m_participantInfoMutex);
+    m_participantInfoMap.remove(guid);
 }
 
 //------------------------------------------------------------------------------

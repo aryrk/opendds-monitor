@@ -31,6 +31,9 @@
 class DDSManager;
 class OpenDynamicData;
 class TopicSampleTableModel;
+class ParticipantInfo;
+
+#include "participant_monitor.h"
 
 const std::string DATA_READER_NAME = "DDSMon";
 const QString SETTINGS_APP_NAME = "DDS Monitor";
@@ -403,6 +406,13 @@ public:
     static QString getPublicationGuid(DDS::InstanceHandle_t handle);
     
     /**
+     * @brief Participant GUID -> ParticipantInfo cache helpers
+     */
+    static void storeParticipantInfo(const ParticipantInfo& info);
+    static bool getParticipantInfoByGuid(const QString &guid, ParticipantInfo &out);
+    static void removeParticipantInfoByGuid(const QString &guid);
+    
+    /**
      * @brief Get a list of sample names (timestamps) for a given topic.
      * @param[in] topicName The name of the topic.
      * @return A stringlist of sample names.
@@ -471,6 +481,10 @@ private:
     /// Map from publication handle to GUID string (built-in publication topic)
     static QMap<quint64, QString> m_publicationGuidMap;
     static QMutex m_publicationGuidMapMutex;
+
+    /// Cached ParticipantInfo objects keyed by GUID string
+    static QMap<QString, ParticipantInfo> m_participantInfoMap;
+    static QMutex m_participantInfoMutex;
 
 };
 
