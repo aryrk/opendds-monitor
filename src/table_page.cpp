@@ -671,7 +671,6 @@ void TablePage::setSample(const QString& sampleName)
         }
     }
 
-    // Print the publication GUID for this sample if available
     QString guid = CommonData::getSampleGuid(m_topicName, index);
     if (!guid.isEmpty())
     {
@@ -700,14 +699,6 @@ void TablePage::setSample(const QString& sampleName)
         {
             m_participantTableModel->setSingleParticipant(pinfo);
         }
-        else
-        {
-            m_participantTableModel->clearParticipants();
-        }
-    }
-    else
-    {
-        m_participantTableModel->clearParticipants();
     }
 
     revertButton->setEnabled(false);
