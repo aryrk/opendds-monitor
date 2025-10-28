@@ -885,7 +885,7 @@ void TablePage::refreshPage()
 }
 
 //------------------------------------------------------------------------------
-void TablePage::setSample(const QString &sampleName)
+void TablePage::setSample(const QString& sampleName)
 {
     if (sampleName.isEmpty())
     {
@@ -931,30 +931,43 @@ void TablePage::setSample(const QString &sampleName)
     if (!guid.isEmpty())
     {
         ParticipantInfo pinfo;
-        bool found = false;
-        QWidgetList mainWidgets = QApplication::topLevelWidgets();
-        int totalPagesFound = 0;
-        for (int i = 0; i < mainWidgets.count() && !found; ++i)
-        {
-            QList<ParticipantPage *> pages = mainWidgets.at(i)->findChildren<ParticipantPage *>();
-            totalPagesFound += pages.count();
-            for (ParticipantPage *pp : pages)
+
+        if (CommonData::getParticipantInfoByGuid(guid, pinfo)) {
+            m_participantTableModel->setSingleParticipant(pinfo);
+        } else {
+            // search participant pages once and cache the result if found.
+            bool found = false;
+            QWidgetList mainWidgets = QApplication::topLevelWidgets();
+            for (int i = 0; i < mainWidgets.count() && !found; ++i)
             {
-                if (!pp)
-                    continue;
-                bool f = pp->findParticipant(guid, pinfo);
-                if (f)
+                QList<ParticipantPage *> pages = mainWidgets.at(i)->findChildren<ParticipantPage *>();
+                for (ParticipantPage *pp : pages)
                 {
-                    found = true;
-                    break;
+                    if (!pp)
+                        continue;
+                    bool f = pp->findParticipant(guid, pinfo);
+                    if (f)
+                    {
+                        found = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (found)
-        {
-            m_participantTableModel->setSingleParticipant(pinfo);
+            if (found)
+            {
+                CommonData::storeParticipantInfo(pinfo);
+                m_participantTableModel->setSingleParticipant(pinfo);
+            }
+            else
+            {
+                m_participantTableModel->clearParticipants();
+            }
         }
+    }
+    else
+    {
+        m_participantTableModel->clearParticipants();
     }
 
     revertButton->setEnabled(false);
